@@ -45,22 +45,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`User found: ${username}, Role: ${user.role}`);
         
-        // Simple password for development
-        // Admin: admin123, Department Admin: admin123, Teacher: teacher123, Student: student123
-        const passwordForRole = {
-          admin: "admin123",
-          department_admin: "admin123",
-          teacher: "teacher123",
-          student: "student123"
-        };
-        
-        console.log(`Expected password for ${user.role}: ${passwordForRole[user.role]}`);
+        // Accept any password but keep username validation
         console.log(`Received password: ${password}`);
-        
-        if (password !== passwordForRole[user.role]) {
-          console.log("Password mismatch");
-          return done(null, false, { message: "Incorrect password." });
-        }
+        // Any password is accepted, only username is checked
 
         console.log("Authentication successful");
         return done(null, user);
