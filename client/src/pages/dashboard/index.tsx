@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Booking, Room } from "@/lib/types";
+import manipalLogo from "@assets/1_1745169307230.png";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -29,9 +30,12 @@ export default function Dashboard() {
     <div className="flex flex-col p-6">
       {/* Welcome Banner */}
       <div className="bg-primary text-white p-6 rounded-lg flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-1">Welcome back, {user?.name.split(' ')[0]}!</h2>
-          <p className="text-primary-100">Always stay updated in Room booking portal</p>
+        <div className="flex items-center">
+          <img src={manipalLogo} alt="Manipal Logo" className="w-16 h-16 mr-4" />
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Welcome back, {user?.name.split(' ')[0]}!</h2>
+            <p className="text-primary-100">Always stay updated in Room booking portal</p>
+          </div>
         </div>
         <div>
           <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
