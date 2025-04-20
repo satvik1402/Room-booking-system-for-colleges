@@ -1,0 +1,47 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document -->
+  <rect x="120" y="40" width="160" height="220" rx="10" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="2"/>
+  <rect x="140" y="60" width="120" height="10" rx="2" fill="#EEEEEE"/>
+  <rect x="140" y="80" width="120" height="10" rx="2" fill="#EEEEEE"/>
+  <rect x="140" y="100" width="80" height="10" rx="2" fill="#EEEEEE"/>
+  <rect x="140" y="140" width="120" height="80" rx="4" fill="#F3F4F6"/>
+  <circle cx="150" cy="180" r="5" fill="#FF7F2A"/>
+  <rect x="160" y="175" width="70" height="10" rx="2" fill="#EEEEEE"/>
+  
+  <!-- Person 1 -->
+  <g transform="translate(50, 140)">
+    <circle cx="25" cy="25" r="25" fill="#1A1A1A"/>
+    <circle cx="15" cy="20" r="3" fill="white"/>
+    <circle cx="35" cy="20" r="3" fill="white"/>
+    <path d="M15 35C15 35 20 40 35 35" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <rect x="0" y="60" width="50" height="60" rx="5" fill="#1A1A1A"/>
+    <rect x="10" y="130" width="10" height="30" rx="2" fill="#1A1A1A"/>
+    <rect x="30" y="130" width="10" height="30" rx="2" fill="#1A1A1A"/>
+  </g>
+  
+  <!-- Person 2 -->
+  <g transform="translate(300, 120)">
+    <circle cx="25" cy="25" r="25" fill="#1A1A1A"/>
+    <circle cx="15" cy="20" r="3" fill="white"/>
+    <circle cx="35" cy="20" r="3" fill="white"/>
+    <path d="M15 35C15 35 20 40 35 35" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <rect x="0" y="60" width="50" height="60" rx="5" fill="#1A1A1A"/>
+    <rect x="10" y="130" width="10" height="30" rx="2" fill="#1A1A1A"/>
+    <rect x="30" y="130" width="10" height="30" rx="2" fill="#1A1A1A"/>
+    <rect x="-10" y="70" width="30" height="10" rx="5" fill="#1A1A1A"/>
+  </g>
+  
+  <!-- Laptop -->
+  <g transform="translate(250, 190)">
+    <rect x="0" y="0" width="60" height="40" rx="5" fill="#1A1A1A"/>
+    <rect x="5" y="5" width="50" height="30" rx="2" fill="#FFFFFF"/>
+    <rect x="-10" y="40" width="80" height="5" rx="2" fill="#1A1A1A"/>
+  </g>
+  
+  <!-- Clock -->
+  <g transform="translate(200, 30)">
+    <circle cx="15" cy="15" r="15" fill="#F3F4F6" stroke="#CCCCCC" stroke-width="1"/>
+    <line x1="15" y1="15" x2="15" y2="8" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+    <line x1="15" y1="15" x2="20" y2="15" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
