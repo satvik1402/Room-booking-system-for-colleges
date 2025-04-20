@@ -46,9 +46,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`User found: ${username}, Role: ${user.role}`);
         
         // Simple password for development
-        // Admin: admin123, Teacher: teacher123, Student: student123
+        // Admin: admin123, Department Admin: admin123, Teacher: teacher123, Student: student123
         const passwordForRole = {
           admin: "admin123",
+          department_admin: "admin123",
           teacher: "teacher123",
           student: "student123"
         };
@@ -293,17 +294,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Ensure startTime and endTime are Date objects
+      const startTime = new Date(validatedData.startTime);
+      const endTime = new Date(validatedData.endTime);
+      
+      // Ensure time slots are hourly (minutes must be 0 or 30)
+      const startMinutes = startTime.getMinutes();
+      const endMinutes = endTime.getMinutes();
+      
+      if (![0, 30].includes(startMinutes) || ![0, 30].includes(endMinutes)) {
+        return res.status(400).json({ 
+          message: "Booking times must be hourly slots (hour:00 or hour:30)" 
+        });
+      }
+      
       const bookingData = {
         ...validatedData,
-        startTime: new Date(validatedData.startTime),
-        endTime: new Date(validatedData.endTime)
+        startTime,
+        endTime
       };
       
       console.log("Parsed booking data:", bookingData);
       
       // Check if room is available
-      const startTimeString = bookingData.startTime.getHours() + ":" + bookingData.startTime.getMinutes();
-      const endTimeString = bookingData.endTime.getHours() + ":" + bookingData.endTime.getMinutes();
+      const startTimeString = bookingData.startTime.getHours() + ":" + 
+        (bookingData.startTime.getMinutes() === 0 ? "00" : bookingData.startTime.getMinutes());
+      const endTimeString = bookingData.endTime.getHours() + ":" + 
+        (bookingData.endTime.getMinutes() === 0 ? "00" : bookingData.endTime.getMinutes());
       
       const isAvailable = await storage.checkRoomAvailability(
         bookingData.roomId,
@@ -331,12 +347,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       
-      // Admin sees all bookings, users see their own
+      // Different roles see different bookings
       let bookings;
+      
+      // Global admin sees all bookings
       if (user.role === 'admin') {
         bookings = await storage.getBookings();
-      } else {
+      } 
+      // Department admin sees all bookings for their department's meeting rooms
+      else if (user.role === 'department_admin') {
+        // Get all bookings first
+        const allBookings = await storage.getBookings();
+        
+        // Get the room details for each booking
+        const bookingsWithRooms = await Promise.all(
+          allBookings.map(async (booking) => {
+            const room = await storage.getRoom(booking.roomId);
+            return { ...booking, room };
+          })
+        );
+        
+        // Filter to show only meeting halls in their department
+        bookings = bookingsWithRooms.filter(booking => 
+          booking.room && 
+          booking.room.roomType === 'meeting_hall' && 
+          (booking.room.department === user.department || user.department === 'all')
+        );
+      }
+      // Teachers see their own bookings
+      else if (user.role === 'teacher') {
         bookings = await storage.getBookingsByUser(user.id);
+      }
+      // Students don't see any bookings - they only view timetable
+      else {
+        bookings = [];
       }
       
       res.json(bookings);
@@ -345,16 +389,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/bookings/pending", hasRole(["admin"]), async (req, res) => {
+  app.get("/api/bookings/pending", hasRole(["admin", "department_admin"]), async (req, res) => {
     try {
-      const pendingBookings = await storage.getBookingsByStatus("pending");
+      const user = req.user as any;
+      let pendingBookings = await storage.getBookingsByStatus("pending");
+      
+      // For department admin, filter bookings for meeting halls in their department
+      if (user.role === 'department_admin') {
+        // Get all booking room details
+        const bookingsWithRooms = await Promise.all(
+          pendingBookings.map(async (booking) => {
+            const room = await storage.getRoom(booking.roomId);
+            return { ...booking, room };
+          })
+        );
+        
+        // Filter to only show meeting halls in their department
+        pendingBookings = bookingsWithRooms
+          .filter(booking => 
+            booking.room && 
+            booking.room.roomType === 'meeting_hall' && 
+            (booking.room.department === user.department || user.department === 'all')
+          );
+      }
+      
       res.json(pendingBookings);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch pending bookings" });
     }
   });
 
-  app.patch("/api/bookings/:id/status", hasRole(["admin"]), async (req, res) => {
+  app.patch("/api/bookings/:id/status", canApproveBooking, async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
       const { status } = req.body;
