@@ -1,14 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../hooks/use-auth";
+import { useAuth } from "../context/auth-provider";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Menu, Search, X } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
@@ -17,7 +18,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [pageTitle, setPageTitle] = useState("Dashboard");
   
   useEffect(() => {
-    // Handle sidebar visibility on window resize
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setSidebarOpen(true);
@@ -32,11 +32,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      await logout();
       setLocation("/auth");
     } catch (error) {
       console.error("Logout error:", error);
-      // Error toast is handled in the mutation
     }
   };
   
@@ -46,14 +45,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-background">
-      {/* Sidebar */}
       <aside 
         className={`bg-sidebar fixed md:relative z-40 md:z-auto w-64 h-full transition-all duration-300 ease-in-out transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div className="h-full flex flex-col">
-          {/* Logo */}
           <div className="p-4 border-b border-sidebar-border flex items-center">
             <Link href="/" className="flex items-center">
               <svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-3">
@@ -67,7 +64,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           
-          {/* User info */}
           <div className="p-4 border-b border-sidebar-border">
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center mr-3">
@@ -82,12 +78,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           
-          {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-4">
             <SidebarNav />
           </div>
           
-          {/* Logout button */}
           <div className="p-4 border-t border-sidebar-border">
             <Button 
               variant="outline" 
@@ -101,7 +95,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       
-      {/* Mobile overlay */}
       {sidebarOpen && isMobile && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
@@ -109,9 +102,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         />
       )}
       
-      {/* Main content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center">
             <Button 
@@ -127,7 +118,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           
           <div className="flex items-center space-x-4">
             <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input 
                 type="text" 
                 placeholder="Search..." 
@@ -142,7 +132,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         
-        {/* Content */}
         <div className="flex-1 overflow-auto">
           {children}
         </div>

@@ -1,138 +1,69 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../../hooks/use-auth";
+import { useAuth } from "../../context/auth-provider";
 
-type SidebarNavProps = {
-  className?: string;
-};
-
-export function SidebarNav({ className }: SidebarNavProps) {
-  const [location] = useLocation();
+export function SidebarNav() {
   const { user } = useAuth();
+  const [location] = useLocation();
 
-  const adminLinks = [
+  const navigation = [
     {
+      title: "Dashboard",
       href: "/",
-      icon: "grid-2",
-      label: "Dashboard",
+      icon: "ri-dashboard-line",
+      roles: ["admin", "department_admin", "teacher", "student"],
     },
     {
+      title: "Available Rooms",
       href: "/available-rooms",
-      icon: "layout-dashboard",
-      label: "Room Availability",
+      icon: "ri-door-open-line",
+      roles: ["admin", "department_admin", "teacher", "student"],
     },
     {
-      href: "/admin/bookings",
-      icon: "clipboard-list",
-      label: "Booking Requests",
-    },
-    {
-      href: "/personal-details",
-      icon: "user",
-      label: "Personal Details",
-    },
-  ];
-  
-  const departmentAdminLinks = [
-    {
-      href: "/",
-      icon: "grid-2",
-      label: "Dashboard",
-    },
-    {
-      href: "/available-rooms",
-      icon: "layout-dashboard",
-      label: "Room Availability",
-    },
-    {
-      href: "/admin/bookings",
-      icon: "clipboard-list",
-      label: "Booking Requests",
-    },
-    {
-      href: "/personal-details",
-      icon: "user",
-      label: "Personal Details",
-    },
-  ];
-
-  const teacherLinks = [
-    {
-      href: "/",
-      icon: "grid-2",
-      label: "Dashboard",
-    },
-    {
-      href: "/available-rooms",
-      icon: "layout-dashboard",
-      label: "Room Availability",
-    },
-    {
-      href: "/my-bookings",
-      icon: "calendar",
-      label: "My Bookings",
-    },
-    {
-      href: "/personal-details",
-      icon: "user",
-      label: "Personal Details",
-    },
-  ];
-
-  const studentLinks = [
-    {
-      href: "/",
-      icon: "grid-2",
-      label: "Dashboard",
-    },
-    {
-      href: "/available-rooms",
-      icon: "layout-dashboard",
-      label: "Available Rooms",
-    },
-    {
+      title: "Timetable",
       href: "/timetable",
-      icon: "calendar-clock",
-      label: "Timetable",
+      icon: "ri-calendar-2-line",
+      roles: ["admin", "department_admin", "teacher", "student"],
     },
     {
+      title: "My Bookings",
+      href: "/my-bookings",
+      icon: "ri-calendar-check-line",
+      roles: ["admin", "department_admin", "teacher"],
+    },
+    {
+      title: "All Bookings",
+      href: "/admin/bookings",
+      icon: "ri-calendar-todo-line",
+      roles: ["admin", "department_admin"],
+    },
+    {
+      title: "Personal Details",
       href: "/personal-details",
-      icon: "user",
-      label: "Personal Details",
+      icon: "ri-user-settings-line",
+      roles: ["admin", "department_admin", "teacher", "student"],
     },
   ];
-
-  // Choose links based on user role
-  let links;
-  switch (user?.role) {
-    case "admin":
-      links = adminLinks;
-      break;
-    case "department_admin":
-      links = departmentAdminLinks;
-      break;
-    case "teacher":
-      links = teacherLinks;
-      break;
-    default:
-      links = studentLinks;
-  }
 
   return (
-    <nav className={cn("space-y-1", className)}>
-      {links.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className={cn(
-            "flex items-center px-4 py-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors",
-            location === link.href && "bg-sidebar-accent font-medium"
-          )}
-        >
-          <i className={`ri-${link.icon} mr-3 text-xl ${location === link.href ? 'text-sidebar-primary' : 'text-gray-500'}`}></i>
-          {link.label}
-        </Link>
-      ))}
+    <nav className="space-y-1">
+      {navigation
+        .filter((item) => item.roles.includes(user?.role || ""))
+        .map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex items-center py-2 px-4 text-sm font-medium rounded-md transition-colors",
+              location === item.href
+                ? "bg-sidebar-accent text-sidebar-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <i className={cn(item.icon, "mr-3 text-xl")} />
+            {item.title}
+          </Link>
+        ))}
     </nav>
   );
 }
