@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RoomCard from "@/components/room-card";
-import { useSearchParams } from "next/navigation";
+import { useSearch } from "wouter";
 
 export default function AvailableRooms() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +16,8 @@ export default function AvailableRooms() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const searchParams = useSearchParams();
+  const [search] = useSearch();
+  const searchParams = new URLSearchParams(search);
 
   // Fetch all rooms
   const { data: allRooms, isLoading: isLoadingRooms } = useQuery<Room[]>({
