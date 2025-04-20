@@ -318,7 +318,293 @@ export class MemStorage implements IStorage {
 
     // Seed rooms
     const defaultRooms: InsertRoom[] = [
-      // AB1 Building Classrooms - Ground Floor
+      // AB1 Building Classrooms
+      // Ground Floor
+      {
+        name: "AB1-001",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-015",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-033",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      // First Floor
+      {
+        name: "AB1-101",
+        roomType: "classroom",
+        capacity: 60,
+        department: "cce",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-115",
+        roomType: "classroom",
+        capacity: 60,
+        department: "cce",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-133",
+        roomType: "classroom",
+        capacity: 60,
+        department: "cce",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      // Second Floor
+      {
+        name: "AB1-201",
+        roomType: "classroom",
+        capacity: 60,
+        department: "iot",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-215",
+        roomType: "classroom",
+        capacity: 60,
+        department: "iot",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      // AB1 Faculty Block Meeting Rooms
+      {
+        name: "FB1-CSE Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB1"
+      },
+      {
+        name: "FB2-CCE Meeting Room", 
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "cce",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB1"
+      },
+      {
+        name: "FB3-IoT Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "iot",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB1"
+      },
+      {
+        name: "FB4-IT Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "it",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB1"
+      },
+
+      // AB2 Building Classrooms
+      // Ground Floor
+      {
+        name: "AB2-001",
+        roomType: "classroom",
+        capacity: 60,
+        department: "aiml",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB2"
+      },
+      {
+        name: "AB2-015",
+        roomType: "classroom",
+        capacity: 60,
+        department: "aiml",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB2"
+      },
+      // First Floor
+      {
+        name: "AB2-101",
+        roomType: "classroom",
+        capacity: 60,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB2"
+      },
+      {
+        name: "AB2-115",
+        roomType: "classroom",
+        capacity: 60,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB2"
+      },
+      // AB2 Faculty Block Meeting Rooms
+      {
+        name: "FB5-AIML Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "aiml",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB2"
+      },
+      {
+        name: "FB6-DS Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB2"
+      },
+      // AB2 Auditoriums
+      {
+        name: "Sharda Pai Auditorium",
+        roomType: "auditorium",
+        capacity: 300,
+        department: "all",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB2"
+      },
+      {
+        name: "TMA Pai Auditorium",
+        roomType: "auditorium",
+        capacity: 500,
+        department: "all",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB2"
+      },
+
+      // AB3 Building Classrooms
+      // Ground Floor
+      {
+        name: "AB3-001",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
+      },
+      {
+        name: "AB3-015",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
+      },
+      // First Floor
+      {
+        name: "AB3-101",
+        roomType: "classroom",
+        capacity: 60,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
+      },
+      {
+        name: "AB3-115",
+        roomType: "classroom",
+        capacity: 60,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
+      },
+      // AB3 Faculty Block Meeting Rooms
+      {
+        name: "FB7-CSE Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB3"
+      },
+      {
+        name: "FB8-DS Meeting Room",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB3"
+      },
+      // AB3 Auditorium
+      {
+        name: "Vasanti Pai Auditorium",
+        roomType: "auditorium",
+        capacity: 350,
+        department: "all",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB3"
+      }
       {
         name: 'AB1-001',
         roomType: 'classroom',

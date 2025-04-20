@@ -14,6 +14,11 @@ export default function RoomCard({ room, isAvailable = true }: RoomCardProps) {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   
   const openBookingModal = () => {
+    // Only show booking modal for teachers and admins
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'student') {
+      return;
+    }
     setBookingModalOpen(true);
   };
   
