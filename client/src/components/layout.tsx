@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/context/auth-provider";
+import { useAuth } from "../hooks/use-auth";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +8,7 @@ import { Bell, Menu, Search, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
@@ -31,12 +31,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
   
   const handleLogout = async () => {
-    await logout();
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account.",
-    });
-    setLocation("/login");
+    try {
+      await logoutMutation.mutateAsync();
+      setLocation("/auth");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Error toast is handled in the mutation
+    }
   };
   
   const toggleSidebar = () => {

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/context/auth-provider";
+import { useAuth } from "../../hooks/use-auth";
 
 type SidebarNavProps = {
   className?: string;
@@ -11,6 +11,29 @@ export function SidebarNav({ className }: SidebarNavProps) {
   const { user } = useAuth();
 
   const adminLinks = [
+    {
+      href: "/",
+      icon: "grid-2",
+      label: "Dashboard",
+    },
+    {
+      href: "/available-rooms",
+      icon: "layout-dashboard",
+      label: "Room Availability",
+    },
+    {
+      href: "/admin/bookings",
+      icon: "clipboard-list",
+      label: "Booking Requests",
+    },
+    {
+      href: "/personal-details",
+      icon: "user",
+      label: "Personal Details",
+    },
+  ];
+  
+  const departmentAdminLinks = [
     {
       href: "/",
       icon: "grid-2",
@@ -79,11 +102,21 @@ export function SidebarNav({ className }: SidebarNavProps) {
     },
   ];
 
-  const links = user?.role === "admin" 
-    ? adminLinks 
-    : user?.role === "teacher" 
-    ? teacherLinks 
-    : studentLinks;
+  // Choose links based on user role
+  let links;
+  switch (user?.role) {
+    case "admin":
+      links = adminLinks;
+      break;
+    case "department_admin":
+      links = departmentAdminLinks;
+      break;
+    case "teacher":
+      links = teacherLinks;
+      break;
+    default:
+      links = studentLinks;
+  }
 
   return (
     <nav className={cn("space-y-1", className)}>
