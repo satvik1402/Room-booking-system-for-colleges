@@ -3,9 +3,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum("user_role", ["admin", "teacher", "student"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "department_admin", "teacher", "student"]);
 export const roomTypeEnum = pgEnum("room_type", ["classroom", "meeting_hall", "auditorium"]);
-export const departmentEnum = pgEnum("department", ["computer_science", "electrical_engineering", "all"]);
+export const departmentEnum = pgEnum("department", ["computer_science", "cce", "iot", "it", "aiml", "data_science", "all"]);
 export const bookingStatusEnum = pgEnum("booking_status", ["pending", "approved", "rejected"]);
 
 // Users table
@@ -72,7 +72,7 @@ export const insertTimetableSchema = createInsertSchema(timetable).omit({ id: tr
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
-  role: z.enum(["admin", "teacher", "student"]),
+  role: z.enum(["admin", "department_admin", "teacher", "student"]),
 });
 
 // Types

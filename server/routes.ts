@@ -107,6 +107,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next();
     };
   };
+  
+  // Check if user is a teacher (only teachers can book rooms)
+  const isTeacher = (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = req.user as any;
+    if (user.role !== 'teacher') {
+      return res.status(403).json({ message: "Only teachers can book rooms" });
+    }
+    
+    next();
+  };
+  
+  // Middleware to check if user can approve a specific booking
+  const canApproveBooking = async (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const user = req.user as any;
+    const userRole = user.role;
+    const userDepartment = user.department;
+    
+    // Get booking details
+    const bookingId = parseInt(req.params.id);
+    const booking = await storage.getBooking(bookingId);
+    
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    
+    // Get room details to check type and department
+    const room = await storage.getRoom(booking.roomId);
+    
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    
+    // Global admin can approve any booking
+    if (userRole === 'admin') {
+      return next();
+    }
+    
+    // Department admin can only approve meeting halls in their department
+    if (userRole === 'department_admin' && 
+        room.roomType === 'meeting_hall' && 
+        (room.department === userDepartment || userDepartment === 'all')) {
+      return next();
+    }
+    
+    // For auditoriums, only global admin can approve
+    if (room.roomType === 'auditorium' && userRole !== 'admin') {
+      return res.status(403).json({ 
+        message: "Only global admin can approve auditorium bookings" 
+      });
+    }
+    
+    // If none of the conditions match, unauthorized
+    return res.status(403).json({ 
+      message: "You don't have permission to approve this booking" 
+    });
+  };
 
   // Authentication routes
   app.post("/api/auth/login", (req, res, next) => {
@@ -218,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Booking routes
-  app.post("/api/bookings", isAuthenticated, async (req, res) => {
+  app.post("/api/bookings", isTeacher, async (req, res) => {
     try {
       console.log("Booking request received:", req.body);
       
