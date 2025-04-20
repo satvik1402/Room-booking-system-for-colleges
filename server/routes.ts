@@ -220,17 +220,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Booking routes
   app.post("/api/bookings", isAuthenticated, async (req, res) => {
     try {
-      const bookingData = insertBookingSchema.parse({
+      console.log("Booking request received:", req.body);
+      
+      // Validate the input data
+      const validatedData = insertBookingSchema.parse({
         ...req.body,
         userId: (req.user as any).id
       });
       
+      // Ensure startTime and endTime are Date objects
+      const bookingData = {
+        ...validatedData,
+        startTime: new Date(validatedData.startTime),
+        endTime: new Date(validatedData.endTime)
+      };
+      
+      console.log("Parsed booking data:", bookingData);
+      
       // Check if room is available
+      const startTimeString = bookingData.startTime.getHours() + ":" + bookingData.startTime.getMinutes();
+      const endTimeString = bookingData.endTime.getHours() + ":" + bookingData.endTime.getMinutes();
+      
       const isAvailable = await storage.checkRoomAvailability(
         bookingData.roomId,
-        new Date(bookingData.startTime),
-        new Date(bookingData.startTime).getHours() + ":" + new Date(bookingData.startTime).getMinutes(),
-        new Date(bookingData.endTime).getHours() + ":" + new Date(bookingData.endTime).getMinutes()
+        bookingData.startTime,
+        startTimeString,
+        endTimeString
       );
       
       if (!isAvailable) {
@@ -240,6 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
     } catch (error) {
+      console.error("Booking creation error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ errors: error.errors });
       }

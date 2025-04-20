@@ -60,7 +60,12 @@ export const timetable = pgTable("timetable", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertRoomSchema = createInsertSchema(rooms).omit({ id: true });
-export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
+// Custom booking schema with proper date transforms
+const baseBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
+export const insertBookingSchema = baseBookingSchema.extend({
+  startTime: z.string().or(z.date()),
+  endTime: z.string().or(z.date()),
+});
 export const insertTimetableSchema = createInsertSchema(timetable).omit({ id: true });
 
 // Login schema
