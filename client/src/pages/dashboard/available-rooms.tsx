@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RoomCard from "@/components/room-card";
+import { useSearchParams } from "next/navigation";
 
 export default function AvailableRooms() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,12 +16,13 @@ export default function AvailableRooms() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  
+  const searchParams = useSearchParams();
+
   // Fetch all rooms
   const { data: allRooms, isLoading: isLoadingRooms } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
   });
-  
+
   // Fetch available rooms based on filters
   const {
     data: availableRooms,
@@ -30,37 +32,39 @@ export default function AvailableRooms() {
     queryKey: ['/api/rooms/available', { date, startTime, endTime }],
     enabled: false,
   });
-  
+
   const rooms = availableRooms || allRooms || [];
   const isLoading = isLoadingRooms || isLoadingAvailable;
-  
+
   // Get unique buildings from rooms data
   const buildings = allRooms
     ? Array.from(new Set(allRooms.map((room) => room.building)))
     : [];
-  
+
   // Filter rooms based on search and selected filters
   const filteredRooms = rooms
     ? rooms.filter((room) => {
         const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = selectedType === "all" || room.roomType === selectedType;
         const matchesBuilding = selectedBuilding === "all" || room.building === selectedBuilding;
+        // If no search is performed, show all rooms
+        if (!searchParams.has('date')) return true;
         return matchesSearch && matchesType && matchesBuilding;
       })
     : [];
-  
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     refetchAvailable();
   };
-  
+
   return (
     <div className="flex flex-col p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Room Availability</h1>
         <p className="text-muted-foreground">Browse available rooms across campus</p>
       </div>
-      
+
       <Card className="mb-6">
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="space-y-4">
@@ -75,7 +79,7 @@ export default function AvailableRooms() {
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="startTime">Start Time</Label>
                 <Input
@@ -85,7 +89,7 @@ export default function AvailableRooms() {
                   onChange={(e) => setStartTime(e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="endTime">End Time</Label>
                 <Input
@@ -96,7 +100,7 @@ export default function AvailableRooms() {
                 />
               </div>
             </div>
-            
+
             <div className="flex flex-col md:flex-row md:items-end gap-4">
               <div className="w-full md:w-1/3 space-y-2">
                 <Label htmlFor="search">Search Rooms</Label>
@@ -107,7 +111,7 @@ export default function AvailableRooms() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
+
               <div className="w-full md:w-1/3 space-y-2">
                 <Label htmlFor="type">Room Type</Label>
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -122,7 +126,7 @@ export default function AvailableRooms() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="w-full md:w-1/3 space-y-2">
                 <Label htmlFor="building">Building</Label>
                 <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
@@ -139,7 +143,7 @@ export default function AvailableRooms() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <Button type="submit" className="w-full md:w-auto">
                 Find Available Rooms
               </Button>
@@ -147,7 +151,7 @@ export default function AvailableRooms() {
           </form>
         </CardContent>
       </Card>
-      
+
       <div className="mb-6 flex flex-wrap gap-2">
         <Button
           variant={selectedType === "all" ? "default" : "outline"}
@@ -182,12 +186,12 @@ export default function AvailableRooms() {
           Auditoriums ({rooms.filter(r => r.roomType === "auditorium").length})
         </Button>
       </div>
-      
+
       {isLoading ? (
         <div className="flex justify-center items-center p-12">
           <p>Loading rooms...</p>
         </div>
-      ) : filteredRooms.length === 0 ? (
+      ) : filteredRooms.length === 0 && searchParams.has('date') ? (
         <div className="bg-muted rounded-lg p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No rooms found</h3>
           <p className="text-muted-foreground">
