@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Room } from "@/lib/types";
@@ -48,8 +49,6 @@ export default function AvailableRooms() {
         const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = selectedType === "all" || room.roomType === selectedType;
         const matchesBuilding = selectedBuilding === "all" || room.building === selectedBuilding;
-        // If no search is performed, show all rooms
-        if (!searchParams.has('date')) return true;
         return matchesSearch && matchesType && matchesBuilding;
       })
     : [];
@@ -191,13 +190,6 @@ export default function AvailableRooms() {
       {isLoading ? (
         <div className="flex justify-center items-center p-12">
           <p>Loading rooms...</p>
-        </div>
-      ) : filteredRooms.length === 0 && searchParams.has('date') ? (
-        <div className="bg-muted rounded-lg p-8 text-center">
-          <h3 className="text-lg font-medium mb-2">No rooms found</h3>
-          <p className="text-muted-foreground">
-            Try adjusting your search criteria or time slot.
-          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
