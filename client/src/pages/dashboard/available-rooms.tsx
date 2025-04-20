@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Room } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +19,15 @@ export default function AvailableRooms() {
 
   // Fetch all rooms
   const { data: rooms = [], isLoading } = useQuery<Room[]>({
-    queryKey: ['/api/rooms'],
+    queryKey: ['rooms'],
+    queryFn: async () => {
+      const response = await fetch('/api/rooms');
+      if (!response.ok) throw new Error('Failed to fetch rooms');
+      return response.json();
+    },
   });
 
-  // Get unique buildings from rooms data
-  const buildings = Array.from(new Set(rooms.map((room) => room.building)));
-
-  // Filter rooms based on search and selected filters
+  // Filter rooms based on search and filters
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = selectedType === "all" || room.roomType === selectedType;
@@ -32,6 +35,10 @@ export default function AvailableRooms() {
     return matchesSearch && matchesType && matchesBuilding;
   });
 
+  // Get unique buildings
+  const buildings = Array.from(new Set(rooms.map((room) => room.building)));
+
+  // Count rooms by type
   const classroomCount = rooms.filter(r => r.roomType === "classroom").length;
   const meetingHallCount = rooms.filter(r => r.roomType === "meeting_hall").length;
   const auditoriumCount = rooms.filter(r => r.roomType === "auditorium").length;
