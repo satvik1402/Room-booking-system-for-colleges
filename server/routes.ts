@@ -42,8 +42,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // In a real app, you'd compare hashed passwords
-        // For this demo, we're just checking if passwords match
-        if (password !== "admin123") {
+        // For this demo, we're accepting some fixed passwords based on role
+        const correctPassword = user.role + '123'; // admin123, teacher123, student123
+        if (password !== correctPassword) {
           return done(null, false, { message: "Incorrect password." });
         }
 
@@ -255,7 +256,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingId = parseInt(req.params.id);
       const { status } = req.body;
       
-      if (!bookingStatusEnum.enum.includes(status)) {
+      // Check if status is a valid booking status
+      const validStatuses = ['pending', 'approved', 'rejected'];
+      if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status value" });
       }
       
