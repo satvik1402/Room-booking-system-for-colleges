@@ -606,16 +606,6 @@ export class MemStorage implements IStorage {
         building: "AB3"
       }
       {
-        name: 'AB1-001',
-        roomType: 'classroom',
-        capacity: 40,
-        department: 'computer_science',
-        hasProjector: true,
-        hasAC: true,
-        hasVideoConf: false,
-        building: 'AB1'
-      },
-      {
         name: 'AB1-015',
         roomType: 'classroom',
         capacity: 40,
