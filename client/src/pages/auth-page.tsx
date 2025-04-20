@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/auth-provider";
+import { useAuth } from "../hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,12 +21,19 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function Login() {
+export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { user, loginMutation } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("student");
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,34 +45,53 @@ export default function Login() {
   });
 
   const { register, handleSubmit, formState } = form;
-  const { errors, isSubmitting } = formState;
+  const { errors } = formState;
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await login(data.username, data.password, data.role);
-      toast({
-        title: "Login successful",
-        description: "Welcome to Manipal University Classroom Booking System",
+      await loginMutation.mutateAsync({
+        username: data.username,
+        password: data.password,
+        role: data.role
       });
+      
       setLocation("/");
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in the mutation onError callback
+      console.error("Login error:", error);
     }
   };
 
   const handleRoleChange = (value: string) => {
     setRole(value);
-    form.setValue("role", value);
+    form.setValue("role", value as any);
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   
-  // Create a titleText based on the selected role
-  const titleText = `${role.charAt(0).toUpperCase() + role.slice(1)} Login`;
+  // Format role name for display
+  const getRoleDisplayText = (roleValue: string) => {
+    if (roleValue === "department_admin") return "Department Admin";
+    return roleValue.charAt(0).toUpperCase() + roleValue.slice(1);
+  };
+
+  const titleText = `${getRoleDisplayText(role)} Login`;
+
+  // Constants for demo credentials based on role
+  const getCredentialsForRole = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return { username: "admin", password: "admin123" };
+      case 'department_admin':
+        return { username: "deptadmin", password: "admin123" };
+      case 'teacher':
+        return { username: "teacher", password: "teacher123" };
+      case 'student':
+        return { username: "student", password: "student123" };
+      default:
+        return { username: "", password: "" };
+    }
+  };
 
   return (
     <div className="h-screen flex flex-col md:flex-row">
@@ -79,10 +105,10 @@ export default function Login() {
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
-              <Label htmlFor="username" className="text-gray-300 mb-1">Email ID</Label>
+              <Label htmlFor="username" className="text-gray-300 mb-1">Username</Label>
               <Input
                 id="username"
-                placeholder="username@college.edu"
+                placeholder="Enter your username"
                 className="bg-gray-800 border-gray-700 text-white"
                 {...register("username")}
               />
@@ -121,10 +147,12 @@ export default function Login() {
             
             <div className="pt-2">
               <input type="hidden" {...register("role")} value={role} />
+              <Label htmlFor="role" className="text-gray-300 mb-1">Select Role</Label>
               <Tabs defaultValue="student" value={role} onValueChange={handleRoleChange} className="w-full">
-                <TabsList className="grid grid-cols-3 w-full">
+                <TabsList className="grid grid-cols-4 w-full">
                   <TabsTrigger value="student">Student</TabsTrigger>
                   <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                  <TabsTrigger value="department_admin">Dept Admin</TabsTrigger>
                   <TabsTrigger value="admin">Admin</TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -133,13 +161,17 @@ export default function Login() {
             <Button 
               type="submit" 
               className="w-full bg-orange-500 hover:bg-orange-600 text-white" 
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
             >
-              {isSubmitting ? "Logging in..." : "Login"}
+              {loginMutation.isPending ? "Logging in..." : "Login"}
             </Button>
             
-            <div className="text-center text-sm text-gray-400">
-              Don't have an account? <a href="#" className="text-orange-500 hover:underline">Sign up</a>
+            <div className="mt-2 text-center text-sm text-gray-400">
+              <p>For demo, use credentials:</p>
+              <p className="mt-1 font-mono text-xs">
+                Username: <span className="text-orange-400">{getCredentialsForRole(role).username}</span> | 
+                Password: <span className="text-orange-400">{getCredentialsForRole(role).password}</span>
+              </p>
             </div>
           </form>
         </div>
@@ -148,9 +180,13 @@ export default function Login() {
       {/* Right side - Illustration */}
       <div className="hidden md:flex w-1/2 bg-orange-500 p-8 items-center justify-center">
         <div className="max-w-md text-white text-center">
-          <h1 className="text-3xl font-bold mb-2">Welcome to</h1>
-          <h2 className="text-2xl font-semibold mb-4">{role} portal</h2>
-          <p className="text-md mb-8">Login to access your classroom booking system</p>
+          <div className="mb-4">
+            <img src={manipalLogo} alt="Manipal University Logo" className="h-16 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Welcome to</h1>
+            <h2 className="text-2xl font-semibold mb-4">Manipal University<br/>Classroom Booking System</h2>
+          </div>
+          
+          <p className="text-md mb-8">Login to access the {getRoleDisplayText(role).toLowerCase()} portal</p>
           
           <div className="flex justify-center mb-8">
             <img src={loginIllustration} alt="Login Illustration" className="w-72 h-auto" />
