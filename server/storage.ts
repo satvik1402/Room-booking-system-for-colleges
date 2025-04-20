@@ -11,14 +11,14 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Room operations
   getRoom(id: number): Promise<Room | undefined>;
   getRooms(): Promise<Room[]>;
   getRoomsByType(type: string): Promise<Room[]>;
   getRoomsByAvailability(date: Date, startTime: string, endTime: string): Promise<Room[]>;
   createRoom(room: InsertRoom): Promise<Room>;
-  
+
   // Booking operations
   getBooking(id: number): Promise<Booking | undefined>;
   getBookings(): Promise<Booking[]>;
@@ -27,7 +27,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: number, status: string): Promise<Booking | undefined>;
   checkRoomAvailability(roomId: number, date: Date, startTime: string, endTime: string): Promise<boolean>;
-  
+
   // Timetable operations
   getTimetable(id: number): Promise<Timetable | undefined>;
   getTimetableByProgram(program: string): Promise<Timetable[]>;
@@ -131,16 +131,16 @@ export class MemStorage implements IStorage {
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
     const id = this.currentBookingId++;
-    
+
     // Ensure the dates are Date objects
     const startTime = booking.startTime instanceof Date 
       ? booking.startTime 
       : new Date(booking.startTime);
-    
+
     const endTime = booking.endTime instanceof Date 
       ? booking.endTime 
       : new Date(booking.endTime);
-    
+
     const newBooking: Booking = { 
       ...booking,
       startTime,
@@ -149,7 +149,7 @@ export class MemStorage implements IStorage {
       id, 
       createdAt: new Date() 
     };
-    
+
     this.bookings.set(id, newBooking);
     return newBooking;
   }
@@ -157,7 +157,7 @@ export class MemStorage implements IStorage {
   async updateBookingStatus(id: number, status: string): Promise<Booking | undefined> {
     const booking = this.bookings.get(id);
     if (!booking) return undefined;
-    
+
     const updatedBooking: Booking = { ...booking, status: status as any };
     this.bookings.set(id, updatedBooking);
     return updatedBooking;
@@ -505,6 +505,96 @@ export class MemStorage implements IStorage {
         hasAC: true,
         hasVideoConf: true,
         building: 'AB3'
+      },
+      {
+        name: "AB1-101",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB1-102",
+        roomType: "classroom",
+        capacity: 60,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "AB3-201",
+        roomType: "classroom",
+        capacity: 60,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
+      },
+      {
+        name: "Meeting Hall 1",
+        roomType: "meeting_hall",
+        capacity: 20,
+        department: "computer_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB1"
+      },
+      {
+        name: "Meeting Hall 2",
+        roomType: "meeting_hall",
+        capacity: 15,
+        department: "data_science",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB3"
+      },
+      {
+        name: "Vasanti Pai Auditorium",
+        roomType: "auditorium",
+        capacity: 500,
+        department: "all",
+        hasProjector: true,
+        hasAC: true,
+        hasVideoConf: true,
+        building: "AB3"
+      },
+      {
+        name: "Room 101",
+        roomType: "classroom",
+        capacity: 30,
+        department: "computer_science",
+        hasProjector: false,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "ab1",
+        roomType: "classroom",
+        capacity: 30,
+        department: "computer_science",
+        hasProjector: false,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB1"
+      },
+      {
+        name: "ab3",
+        roomType: "classroom",
+        capacity: 30,
+        department: "computer_science",
+        hasProjector: false,
+        hasAC: true,
+        hasVideoConf: false,
+        building: "AB3"
       }
     ];
 
