@@ -33,14 +33,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+        if (window.location.pathname === '/auth') {
+          setLocation('/');
+        }
       } else {
         setUser(null);
-        setLocation('/auth');
+        if (window.location.pathname !== '/auth') {
+          setLocation('/auth');
+        }
       }
     } catch (err) {
       console.error('Failed to check auth status:', err);
       setUser(null);
-      setLocation('/auth');
+      if (window.location.pathname !== '/auth') {
+        setLocation('/auth');
+      }
     } finally {
       setIsLoading(false);
     }

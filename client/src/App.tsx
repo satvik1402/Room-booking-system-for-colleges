@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./context/auth-provider";
 
 // Pages
 import NotFound from "@/pages/not-found";
