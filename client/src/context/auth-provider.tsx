@@ -1,13 +1,14 @@
+
 import { createContext, useContext, useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string, role: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
-  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,12 +16,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
-  // Initialize by checking if user is already logged in
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const checkAuthStatus = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch('/api/auth/me', {
         credentials: 'include'
       });
@@ -28,32 +31,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-      } else {
-        setUser(null);
       }
     } catch (err) {
-      console.error('Failed to check auth status', err);
-      setUser(null);
+      console.error('Failed to check auth status:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Check auth status on initial load
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
   const login = async (username: string, password: string, role: string) => {
     try {
       setIsLoading(true);
-      setError(null);
       const res = await apiRequest('POST', '/api/auth/login', { username, password, role });
+      
+      if (!res.ok) {
+        throw new Error('Login failed');
+      }
+      
       const data = await res.json();
       setUser(data.user);
-      return data;
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome to Manipal University Classroom Booking System",
+      });
     } catch (err) {
-      setError((err as Error).message || 'Login failed');
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
       throw err;
     } finally {
       setIsLoading(false);
@@ -66,14 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiRequest('POST', '/api/auth/logout', {});
       setUser(null);
     } catch (err) {
-      console.error('Logout failed', err);
+      console.error('Logout failed:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, error }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
