@@ -1,14 +1,12 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Room } from "@/lib/types";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RoomCard from "@/components/room-card";
-import { useSearch } from "wouter";
 
 export default function AvailableRooms() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,46 +15,26 @@ export default function AvailableRooms() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const [search] = useSearch();
-  const searchParams = new URLSearchParams(search);
 
   // Fetch all rooms
-  const { data: allRooms, isLoading: isLoadingRooms } = useQuery<Room[]>({
+  const { data: rooms = [], isLoading } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
   });
 
-  // Fetch available rooms based on filters
-  const {
-    data: availableRooms,
-    isLoading: isLoadingAvailable,
-    refetch: refetchAvailable,
-  } = useQuery<Room[]>({
-    queryKey: ['/api/rooms/available', { date, startTime, endTime }],
-    enabled: false,
-  });
-
-  const rooms = availableRooms || allRooms || [];
-  const isLoading = isLoadingRooms || isLoadingAvailable;
-
   // Get unique buildings from rooms data
-  const buildings = allRooms
-    ? Array.from(new Set(allRooms.map((room) => room.building)))
-    : [];
+  const buildings = Array.from(new Set(rooms.map((room) => room.building)));
 
   // Filter rooms based on search and selected filters
-  const filteredRooms = rooms
-    ? rooms.filter((room) => {
-        const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = selectedType === "all" || room.roomType === selectedType;
-        const matchesBuilding = selectedBuilding === "all" || room.building === selectedBuilding;
-        return matchesSearch && matchesType && matchesBuilding;
-      })
-    : [];
+  const filteredRooms = rooms.filter((room) => {
+    const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = selectedType === "all" || room.roomType === selectedType;
+    const matchesBuilding = selectedBuilding === "all" || room.building === selectedBuilding;
+    return matchesSearch && matchesType && matchesBuilding;
+  });
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    refetchAvailable();
-  };
+  const classroomCount = rooms.filter(r => r.roomType === "classroom").length;
+  const meetingHallCount = rooms.filter(r => r.roomType === "meeting_hall").length;
+  const auditoriumCount = rooms.filter(r => r.roomType === "auditorium").length;
 
   return (
     <div className="flex flex-col p-6">
@@ -67,7 +45,7 @@ export default function AvailableRooms() {
 
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <form onSubmit={handleSearch} className="space-y-4">
+          <form className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
@@ -143,10 +121,6 @@ export default function AvailableRooms() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <Button type="submit" className="w-full md:w-auto">
-                Find Available Rooms
-              </Button>
             </div>
           </form>
         </CardContent>
@@ -167,7 +141,7 @@ export default function AvailableRooms() {
           className="rounded-full"
           size="sm"
         >
-          Classrooms ({rooms.filter(r => r.roomType === "classroom").length})
+          Classrooms ({classroomCount})
         </Button>
         <Button
           variant={selectedType === "meeting_hall" ? "default" : "outline"}
@@ -175,7 +149,7 @@ export default function AvailableRooms() {
           className="rounded-full"
           size="sm"
         >
-          Meeting Halls ({rooms.filter(r => r.roomType === "meeting_hall").length})
+          Meeting Halls ({meetingHallCount})
         </Button>
         <Button
           variant={selectedType === "auditorium" ? "default" : "outline"}
@@ -183,7 +157,7 @@ export default function AvailableRooms() {
           className="rounded-full"
           size="sm"
         >
-          Auditoriums ({rooms.filter(r => r.roomType === "auditorium").length})
+          Auditoriums ({auditoriumCount})
         </Button>
       </div>
 
