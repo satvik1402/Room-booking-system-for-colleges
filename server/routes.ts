@@ -36,20 +36,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Authentication attempt for username: ${username}`);
         const user = await storage.getUserByUsername(username);
         if (!user) {
+          console.log(`User not found: ${username}`);
           return done(null, false, { message: "Incorrect username." });
         }
-
-        // In a real app, you'd compare hashed passwords
-        // For this demo, we're accepting some fixed passwords based on role
-        const correctPassword = user.role + '123'; // admin123, teacher123, student123
-        if (password !== correctPassword) {
+        
+        console.log(`User found: ${username}, Role: ${user.role}`);
+        
+        // Simple password for development
+        // Admin: admin123, Teacher: teacher123, Student: student123
+        const passwordForRole = {
+          admin: "admin123",
+          teacher: "teacher123",
+          student: "student123"
+        };
+        
+        console.log(`Expected password for ${user.role}: ${passwordForRole[user.role]}`);
+        console.log(`Received password: ${password}`);
+        
+        if (password !== passwordForRole[user.role]) {
+          console.log("Password mismatch");
           return done(null, false, { message: "Incorrect password." });
         }
 
+        console.log("Authentication successful");
         return done(null, user);
       } catch (err) {
+        console.error("Authentication error:", err);
         return done(err);
       }
     })
@@ -97,29 +112,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", (req, res, next) => {
     try {
       const { username, password, role } = loginSchema.parse(req.body);
+      console.log(`Login attempt - Username: ${username}, Role: ${role}`);
       
       passport.authenticate("local", (err: any, user: any, info: any) => {
         if (err) {
+          console.error("Login error:", err);
           return next(err);
         }
         if (!user) {
-          return res.status(401).json({ message: info.message });
+          console.log("Login failed:", info?.message);
+          return res.status(401).json({ message: info?.message || "Authentication failed" });
         }
         if (user.role !== role) {
+          console.log(`Role mismatch - Expected: ${role}, Actual: ${user.role}`);
           return res.status(403).json({ message: "Invalid role selected" });
         }
         
         req.logIn(user, (err) => {
           if (err) {
+            console.error("Login session error:", err);
             return next(err);
           }
+          console.log(`Login successful for user: ${user.username}`);
           return res.json({ user: { id: user.id, username: user.username, name: user.name, role: user.role } });
         });
       })(req, res, next);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("Login validation error:", error.errors);
         return res.status(400).json({ errors: error.errors });
       }
+      console.error("Unexpected login error:", error);
       next(error);
     }
   });
