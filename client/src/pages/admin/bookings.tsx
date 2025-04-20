@@ -12,83 +12,80 @@ import { format } from "date-fns";
 import { AlertCircle, Calendar, Check, Clock, MapPin, User as UserIcon, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminBookings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("pending");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-  
+
   // Fetch all bookings
   const { data: bookings, isLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
   });
-  
+
   // Fetch rooms to get details for each booking
   const { data: rooms } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
   });
-  
+
   // Fetch users to get details for each booking
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    // Since we don't have a direct endpoint for users, we'll simulate this by using the existing data
-    queryFn: () => {
-      // Extract user info from bookings data to create a users array
-      if (!bookings) return [];
-      const userMap = new Map<number, User>();
-      bookings.forEach((booking) => {
-        if (!userMap.has(booking.userId)) {
-          // We only have userId in bookings, construct minimum user object
-          userMap.set(booking.userId, {
-            id: booking.userId,
-            username: `user${booking.userId}`,
-            name: `User ${booking.userId}`,
-            email: `user${booking.userId}@manipal.edu`,
-            role: 'student',
-            department: 'computer_science'
-          });
-        }
-      });
-      return Array.from(userMap.values());
-    },
-    enabled: !!bookings,
   });
-  
+
   // Helper to get room details
   const getRoomDetails = (roomId: number) => {
     return rooms?.find(room => room.id === roomId);
   };
-  
+
   // Helper to get user details
   const getUserDetails = (userId: number) => {
     return users?.find(user => user.id === userId);
   };
-  
-  // Filter bookings based on active tab
+
+  // Filter bookings based on user role and room type
   const filteredBookings = bookings?.filter(booking => {
-    if (activeTab === "all") return true;
-    return booking.status === activeTab;
+    const room = getRoomDetails(booking.roomId);
+
+    // First filter by tab status
+    if (activeTab !== "all" && booking.status !== activeTab) {
+      return false;
+    }
+
+    // Then filter by user role and room type
+    if (user?.role === "admin") {
+      // Global admin sees classroom and auditorium bookings
+      return room?.roomType === "classroom" || room?.roomType === "auditorium";
+    } else if (user?.role === "department_admin") {
+      // Department admin only sees meeting hall bookings for their department
+      return room?.roomType === "meeting_hall" && 
+             (room?.department === user.department || user.department === "all");
+    }
+
+    return false;
   });
-  
+
   // Sort bookings by date (most recent first)
   const sortedBookings = filteredBookings?.sort((a, b) => {
     return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
   });
-  
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "MMMM d, yyyy");
   };
-  
+
   // Format time
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "h:mm a");
   };
-  
+
   // Approve booking mutation
   const approveMutation = useMutation({
     mutationFn: (bookingId: number) => 
@@ -110,7 +107,7 @@ export default function AdminBookings() {
       });
     },
   });
-  
+
   // Reject booking mutation
   const rejectMutation = useMutation({
     mutationFn: (bookingId: number) => 
@@ -132,40 +129,46 @@ export default function AdminBookings() {
       });
     },
   });
-  
+
   // Open approve dialog
   const openApproveDialog = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsApproveDialogOpen(true);
   };
-  
+
   // Open reject dialog
   const openRejectDialog = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsRejectDialogOpen(true);
   };
-  
+
   // Handle approve confirmation
   const handleApprove = () => {
     if (selectedBooking) {
       approveMutation.mutate(selectedBooking.id);
     }
   };
-  
+
   // Handle reject confirmation
   const handleReject = () => {
     if (selectedBooking) {
       rejectMutation.mutate(selectedBooking.id);
     }
   };
-  
+
   return (
     <div className="flex flex-col p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Booking Requests</h1>
-        <p className="text-muted-foreground">Review and manage room booking requests</p>
+        <h1 className="text-2xl font-bold mb-2">
+          {user?.role === "admin" ? "Classroom & Auditorium Bookings" : "Meeting Hall Bookings"}
+        </h1>
+        <p className="text-muted-foreground">
+          {user?.role === "admin" 
+            ? "Review and manage classroom and auditorium booking requests" 
+            : `Review and manage meeting hall booking requests for ${user?.department.replace('_', ' ')} department`}
+        </p>
       </div>
-      
+
       <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList>
           <TabsTrigger value="all">All Requests</TabsTrigger>
@@ -174,7 +177,7 @@ export default function AdminBookings() {
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
       </Tabs>
-      
+
       {isLoading ? (
         <div className="flex justify-center items-center p-12">
           <p>Loading booking requests...</p>
@@ -198,7 +201,7 @@ export default function AdminBookings() {
                   <div>
                     <CardTitle>{room?.name || `Room #${booking.roomId}`}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Booking #{booking.id} • Requested on {formatDate(booking.createdAt)}
+                      Booking #{booking.id} • Requested on {format(new Date(booking.createdAt), "MMMM d, yyyy")}
                     </p>
                   </div>
                   <Badge variant={booking.status as any}>
@@ -212,41 +215,41 @@ export default function AdminBookings() {
                       <div>
                         <p className="font-medium">{user?.name || `User #${booking.userId}`}</p>
                         <p className="text-sm text-muted-foreground capitalize">
-                          {user?.role || "Student"} • {user?.department.replace('_', ' ') || "Computer Science"}
+                          {user?.role || "Teacher"} • {user?.department.replace('_', ' ') || "Department"}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start">
                       <Calendar className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                       <div>
-                        <p className="font-medium">{formatDate(booking.startTime)}</p>
+                        <p className="font-medium">{format(new Date(booking.startTime), "MMMM d, yyyy")}</p>
                         <p className="text-sm text-muted-foreground">
-                          {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                          {format(new Date(booking.startTime), "h:mm a")} - {format(new Date(booking.endTime), "h:mm a")}
                         </p>
                       </div>
                     </div>
-                    
+
                     {room && (
                       <div className="flex items-start">
                         <MapPin className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                         <div>
                           <p className="font-medium">{room.building}</p>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            <Badge variant={room.roomType as any}>{room.roomType.replace('_', ' ')}</Badge>
-                            <Badge variant={room.department as any}>{room.department.replace('_', ' ')}</Badge>
+                            <Badge variant="outline" className="capitalize">{room.roomType.replace('_', ' ')}</Badge>
+                            <Badge variant="outline" className="capitalize">{room.department.replace('_', ' ')}</Badge>
                           </div>
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="pt-2 border-t">
                       <p className="text-sm font-medium mb-1">Purpose:</p>
                       <p className="text-sm text-muted-foreground">
                         {booking.purpose}
                       </p>
                     </div>
-                    
+
                     {booking.status === "pending" && (
                       <div className="flex justify-end space-x-3 pt-2">
                         <Button 
@@ -275,7 +278,7 @@ export default function AdminBookings() {
           })}
         </div>
       )}
-      
+
       {/* Approve Dialog */}
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent>
@@ -317,7 +320,7 @@ export default function AdminBookings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
