@@ -26,9 +26,10 @@ export default function MyBookings() {
   
   // Filter bookings based on active tab
   const filteredBookings = bookings?.filter(booking => {
+    if (!booking) return false;
     if (activeTab === "all") return true;
     return booking.status === activeTab;
-  });
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
   // Sort bookings by date (most recent first)
   const sortedBookings = filteredBookings?.sort((a, b) => {

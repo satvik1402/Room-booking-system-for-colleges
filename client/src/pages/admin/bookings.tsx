@@ -50,6 +50,7 @@ export default function AdminBookings() {
   // Filter bookings based on user role and room type
   const filteredBookings = bookings?.filter(booking => {
     const room = getRoomDetails(booking.roomId);
+    if (!room) return false;
 
     // First filter by tab status
     if (activeTab !== "all" && booking.status !== activeTab) {
@@ -59,11 +60,11 @@ export default function AdminBookings() {
     // Then filter by user role and room type
     if (user?.role === "admin") {
       // Global admin sees classroom and auditorium bookings
-      return room?.roomType === "classroom" || room?.roomType === "auditorium";
+      return true; // Show all bookings to admin
     } else if (user?.role === "department_admin") {
       // Department admin only sees meeting hall bookings for their department
-      return room?.roomType === "meeting_hall" && 
-             (room?.department === user.department || user.department === "all");
+      return room.roomType === "meeting_hall" && 
+             (room.department === user.department || user.department === "all");
     }
 
     return false;
