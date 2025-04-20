@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +17,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
   
   useEffect(() => {
     checkAuthStatus();
@@ -33,21 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-        if (window.location.pathname === '/auth') {
-          setLocation('/');
-        }
-      } else {
-        setUser(null);
-        if (window.location.pathname !== '/auth') {
-          setLocation('/auth');
-        }
       }
     } catch (err) {
       console.error('Failed to check auth status:', err);
-      setUser(null);
-      if (window.location.pathname !== '/auth') {
-        setLocation('/auth');
-      }
     } finally {
       setIsLoading(false);
     }
@@ -64,13 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const data = await res.json();
       setUser(data.user);
-      await checkAuthStatus(); // Re-verify auth status after login
       
       toast({
         title: "Login successful",
         description: "Welcome to Manipal University Classroom Booking System",
       });
-      setLocation('/');
     } catch (err) {
       toast({
         title: "Login failed",
@@ -88,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       await apiRequest('POST', '/api/auth/logout', {});
       setUser(null);
-      setLocation('/auth');
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {

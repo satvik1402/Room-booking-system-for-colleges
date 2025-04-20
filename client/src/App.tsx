@@ -1,8 +1,9 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./context/auth-provider";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 
 // Pages
 import NotFound from "@/pages/not-found";
@@ -28,6 +29,25 @@ function ProtectedRoute({
   roles?: string[] 
   [key: string]: any 
 }) {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/auth");
+    } else if (user && !roles.includes(user.role)) {
+      setLocation("/");
+    }
+  }, [user, isLoading, setLocation, roles]);
+
+  if (isLoading) {
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return <Component {...rest} />;
 }
 
@@ -42,12 +62,18 @@ function AuthenticatedRoutes() {
       </Route>
       <Route path="/available-rooms">
         <Layout>
-          <ProtectedRoute component={AvailableRooms} />
+          <ProtectedRoute 
+            component={AvailableRooms} 
+            roles={['admin', 'department_admin', 'teacher', 'student']} 
+          />
         </Layout>
       </Route>
       <Route path="/timetable">
         <Layout>
-          <ProtectedRoute component={Timetable} />
+          <ProtectedRoute 
+            component={Timetable} 
+            roles={['admin', 'department_admin', 'teacher', 'student']} 
+          />
         </Layout>
       </Route>
       <Route path="/personal-details">
@@ -57,12 +83,18 @@ function AuthenticatedRoutes() {
       </Route>
       <Route path="/my-bookings">
         <Layout>
-          <ProtectedRoute component={MyBookings} />
+          <ProtectedRoute 
+            component={MyBookings} 
+            roles={['admin', 'department_admin', 'teacher']} 
+          />
         </Layout>
       </Route>
       <Route path="/admin/bookings">
         <Layout>
-          <ProtectedRoute component={AdminBookings} />
+          <ProtectedRoute 
+            component={AdminBookings} 
+            roles={['admin', 'department_admin']} 
+          />
         </Layout>
       </Route>
       <Route component={NotFound} />
@@ -70,21 +102,30 @@ function AuthenticatedRoutes() {
   );
 }
 
-function App() {
+// Main router
+function Router() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Switch>
-            <Route path="/auth" component={AuthPage} />
-            <Route>
-              <AuthenticatedRoutes />
-            </Route>
-          </Switch>
-        </TooltipProvider>
+        <Switch>
+          <Route path="/auth">
+            <AuthPage />
+          </Route>
+          <Route>
+            <AuthenticatedRoutes />
+          </Route>
+        </Switch>
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <TooltipProvider>
+      <Toaster />
+      <Router />
+    </TooltipProvider>
   );
 }
 
