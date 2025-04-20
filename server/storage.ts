@@ -604,7 +604,7 @@ export class MemStorage implements IStorage {
         hasAC: true,
         hasVideoConf: true,
         building: "AB3"
-      }
+      },
       {
         name: 'AB1-015',
         roomType: 'classroom',
