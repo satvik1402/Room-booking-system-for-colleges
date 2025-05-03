@@ -1,4 +1,4 @@
-ClassRoom Booking System for colleges
+## Classroom Booking System For college
 
 A modern web application for managing room bookings in an educational institution. The system supports different types of rooms (classrooms, auditoriums, and meeting halls) with role-based access control.
 
@@ -91,3 +91,20 @@ A modern web application for managing room bookings in an educational institutio
 - `GET /api/bookings` - Get user's bookings
 - `GET /api/bookings/pending` - Get pending bookings (admin only)
 - `PATCH /api/bookings/:id/status` - Update booking status (admin only)
+
+
+## UI designs
+## Student Side-
+![image](https://github.com/user-attachments/assets/4d59b706-c328-40bb-a8bc-dd4ec19b4429)
+![image](https://github.com/user-attachments/assets/c7262dfe-4c5a-4bba-a81d-a3b89d66eb96)
+![image](https://github.com/user-attachments/assets/08dfa7bc-d5a3-424f-97ec-95be68263482)
+![image](https://github.com/user-attachments/assets/f53e1422-e32b-446c-8ba9-e313af41fcc2)
+
+## Teacher Side-
+![image](https://github.com/user-attachments/assets/467c992b-eb13-45f2-83b2-7a53d3fc6704)
+![image](https://github.com/user-attachments/assets/85142770-9bc8-4db8-b8a1-bae78b478c18)
+![image](https://github.com/user-attachments/assets/ef3e71ce-bb23-451d-a220-bd010e6da30c)
+![image](https://github.com/user-attachments/assets/0d468115-75d1-44b7-a3fa-aa8135c55b68)
+
+Admin-
+![image](https://github.com/user-attachments/assets/2a34401a-4038-460d-8e7b-20be56ea999e)
