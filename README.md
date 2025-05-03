@@ -1,4 +1,4 @@
-# LanguageLinkUp - Room Booking System
+ClassRoom Booking System for colleges
 
 A modern web application for managing room bookings in an educational institution. The system supports different types of rooms (classrooms, auditoriums, and meeting halls) with role-based access control.
 
@@ -8,12 +8,13 @@ A modern web application for managing room bookings in an educational institutio
   - Global Admin: Manages classroom and auditorium bookings
   - Department Admin: Manages meeting hall bookings for their department
   - Teachers: Can request room bookings
-  - Students: Can view timetables
+  - Students: Can view timetables for all sections,branches, available rooms in college.
 
 - **Room Types**:
   - Classrooms
   - Auditoriums
   - Meeting Halls
+  - management rooms
 
 - **Booking Management**:
   - Request room bookings
@@ -29,12 +30,12 @@ A modern web application for managing room bookings in an educational institutio
   - Vite for build tooling
   - TanStack Query for data fetching
   - Tailwind CSS for styling
-  - Shadcn UI components
+    
 
 - **Backend**:
   - Node.js with Express
   - TypeScript
-  - In-memory storage (can be extended to use a database)
+  - Mongodb and local storage
 
 ## Project Structure
 
@@ -90,7 +91,3 @@ A modern web application for managing room bookings in an educational institutio
 - `GET /api/bookings` - Get user's bookings
 - `GET /api/bookings/pending` - Get pending bookings (admin only)
 - `PATCH /api/bookings/:id/status` - Update booking status (admin only)
-
-## License
-
-MIT 
