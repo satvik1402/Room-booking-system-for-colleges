@@ -1,13 +1,13 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Room } from "@/lib/types";
+import { Room, Booking } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RoomCard from "@/components/room-card";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function AvailableRooms() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,14 +18,37 @@ export default function AvailableRooms() {
   const [endTime, setEndTime] = useState("17:00");
 
   // Fetch all rooms
-  const { data: rooms = [], isLoading } = useQuery<Room[]>({
+  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery<Room[]>({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const response = await fetch('/api/rooms');
+      const response = await apiRequest('GET', '/api/rooms');
       if (!response.ok) throw new Error('Failed to fetch rooms');
       return response.json();
     },
   });
+
+  // Fetch current bookings
+  const { data: bookings = [], isLoading: isLoadingBookings } = useQuery<Booking[]>({
+    queryKey: ['bookings'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/bookings');
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      return response.json();
+    },
+  });
+
+  // Check if a room is currently occupied
+  const isRoomOccupied = (roomId: number) => {
+    const now = new Date();
+    return bookings.some(booking => {
+      if (booking.status !== 'approved') return false;
+      const startTime = new Date(booking.startTime);
+      const endTime = new Date(booking.endTime);
+      return booking.roomId === roomId && 
+             now >= startTime && 
+             now <= endTime;
+    });
+  };
 
   // Filter rooms based on search and filters
   const filteredRooms = rooms.filter((room) => {
@@ -43,11 +66,14 @@ export default function AvailableRooms() {
   const meetingHallCount = rooms.filter(r => r.roomType === "meeting_hall").length;
   const auditoriumCount = rooms.filter(r => r.roomType === "auditorium").length;
 
+  // Count occupied rooms
+  const occupiedCount = rooms.filter(room => isRoomOccupied(room.id)).length;
+
   return (
     <div className="flex flex-col p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">Room Availability</h1>
-        <p className="text-muted-foreground">Browse available rooms across campus</p>
+        <p className="text-muted-foreground">Browse rooms across campus</p>
       </div>
 
       <Card className="mb-6">
@@ -166,16 +192,27 @@ export default function AvailableRooms() {
         >
           Auditoriums ({auditoriumCount})
         </Button>
+        <Button
+          variant="outline"
+          className="rounded-full text-red-500"
+          size="sm"
+        >
+          Currently Occupied ({occupiedCount})
+        </Button>
       </div>
 
-      {isLoading ? (
+      {isLoadingRooms || isLoadingBookings ? (
         <div className="flex justify-center items-center p-12">
           <p>Loading rooms...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRooms.map((room) => (
-            <RoomCard key={room.id} room={room} isAvailable={true} />
+            <RoomCard 
+              key={room.id} 
+              room={room} 
+              isAvailable={!isRoomOccupied(room.id)} 
+            />
           ))}
         </div>
       )}

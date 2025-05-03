@@ -4,44 +4,54 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import BookingModal from "@/components/booking-modal";
+import { useAuth } from "@/hooks/use-auth"; // Import useAuth
 
 interface RoomCardProps {
   room: Room;
-  isAvailable?: boolean;
+  isAvailable: boolean;
 }
 
-export default function RoomCard({ room, isAvailable = true }: RoomCardProps) {
+export default function RoomCard({ room, isAvailable }: RoomCardProps) {
+  const { user } = useAuth(); // Get user from auth context
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  
+
   const openBookingModal = () => {
-    // Only show booking modal for teachers and admins
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.role === 'student') {
-      return;
+    // Allow only teachers and admins to open the booking modal
+    if (user?.role === 'student') {
+      return; // Do not open booking modal for students
     }
     setBookingModalOpen(true);
   };
-  
+
   const closeBookingModal = () => {
     setBookingModalOpen(false);
   };
-  
+
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className={`overflow-hidden ${!isAvailable ? 'bg-gray-50' : ''}`}>
         <CardContent className="p-4">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-semibold text-lg">{room.name}</h3>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Badge variant={room.roomType as any}>{room.roomType.replace('_', ' ')}</Badge>
-                <Badge variant={isAvailable ? 'available' : 'occupied'}>
-                  {isAvailable ? 'Currently Available' : 'Currently Occupied'}
+                <Badge 
+                  variant={isAvailable ? 'available' : 'occupied'}
+                  className={isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                >
+                  {isAvailable ? 'Available' : 'Currently Occupied'}
                 </Badge>
               </div>
             </div>
             <Badge variant={room.department as any}>{room.department.replace('_', ' ')}</Badge>
           </div>
+          
+          {!isAvailable && user?.role !== 'student' && (
+            <div className="text-sm text-muted-foreground bg-yellow-50 p-2 rounded-md mt-2">
+              Note: Room is currently occupied but you can still book it for future dates.
+            </div>
+          )}
           
           <div className="space-y-3">
             <div className="flex items-center">
@@ -59,7 +69,7 @@ export default function RoomCard({ room, isAvailable = true }: RoomCardProps) {
           </div>
         </CardContent>
         
-        <CardFooter className="bg-gray-50 p-4 border-t">
+        <CardFooter className={`${!isAvailable ? 'bg-gray-100' : 'bg-gray-50'} p-4 border-t`}>
           <div className="flex items-center justify-between w-full">
             <div className="flex space-x-2">
               {room.hasProjector && (
@@ -87,13 +97,15 @@ export default function RoomCard({ room, isAvailable = true }: RoomCardProps) {
               )}
             </div>
             
-            <Button 
-              onClick={openBookingModal}
-              disabled={!isAvailable}
-              variant={isAvailable ? "default" : "outline"}
-            >
-              {isAvailable ? "Book Now" : "Unavailable"}
-            </Button>
+            {/* Updated condition to show "Book Now" button for teachers and admins only */}
+            {user?.role !== 'student' && (
+              <Button 
+                onClick={openBookingModal}
+                variant={isAvailable ? "default" : "secondary"}
+              >
+                Book Now
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>

@@ -22,19 +22,40 @@ export default function AdminBookings() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
-  // Fetch all bookings
-  const { data: bookings, isLoading } = useQuery<Booking[]>({
-    queryKey: ['/api/bookings'],
+  // Fetch all bookings based on active tab
+  const { data: bookings, isLoading, error } = useQuery<Booking[]>({
+    queryKey: [activeTab === "pending" ? '/api/bookings/pending' : '/api/bookings'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', activeTab === "pending" ? '/api/bookings/pending' : '/api/bookings');
+      if (!res.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      return res.json();
+    }
   });
 
   // Fetch rooms to get details for each booking
   const { data: rooms } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/rooms');
+      if (!res.ok) {
+        throw new Error('Failed to fetch rooms');
+      }
+      return res.json();
+    }
   });
 
   // Fetch users to get details for each booking
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/users');
+      if (!res.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return res.json();
+    }
   });
 
   // Helper to get room details
@@ -52,7 +73,7 @@ export default function AdminBookings() {
     const room = getRoomDetails(booking.roomId);
     if (!room) return false;
 
-    // First filter by tab status
+    // First filter by tab status if not on "all" tab
     if (activeTab !== "all" && booking.status !== activeTab) {
       return false;
     }
@@ -60,7 +81,7 @@ export default function AdminBookings() {
     // Then filter by user role and room type
     if (user?.role === "admin") {
       // Global admin sees classroom and auditorium bookings
-      return true; // Show all bookings to admin
+      return room.roomType === "classroom" || room.roomType === "auditorium";
     } else if (user?.role === "department_admin") {
       // Department admin only sees meeting hall bookings for their department
       return room.roomType === "meeting_hall" && 
@@ -68,7 +89,7 @@ export default function AdminBookings() {
     }
 
     return false;
-  });
+  }) || [];
 
   // Sort bookings by date (most recent first)
   const sortedBookings = filteredBookings?.sort((a, b) => {
@@ -93,6 +114,7 @@ export default function AdminBookings() {
       apiRequest('PATCH', `/api/bookings/${bookingId}/status`, { status: 'approved' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings/pending'] });
       toast({
         title: "Booking Approved",
         description: "The booking request has been approved successfully.",
@@ -115,6 +137,7 @@ export default function AdminBookings() {
       apiRequest('PATCH', `/api/bookings/${bookingId}/status`, { status: 'rejected' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings/pending'] });
       toast({
         title: "Booking Rejected",
         description: "The booking request has been rejected.",
@@ -183,6 +206,14 @@ export default function AdminBookings() {
         <div className="flex justify-center items-center p-12">
           <p>Loading booking requests...</p>
         </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Failed to load bookings'}
+          </AlertDescription>
+        </Alert>
       ) : !sortedBookings || sortedBookings.length === 0 ? (
         <Alert>
           <AlertCircle className="h-4 w-4" />

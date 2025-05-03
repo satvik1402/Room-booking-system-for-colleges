@@ -1,16 +1,17 @@
-import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
+import { Express, Request, Response } from "express";
+import { createServer, Server } from "http";
 import { storage } from "./storage";
 import { 
   insertBookingSchema, 
   loginSchema,
   bookingStatusEnum
-} from "@shared/schema";
+} from "../shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import MemoryStore from "memorystore";
+import type { Booking, Room, User } from "../shared/schema";
 
 const SessionStore = MemoryStore(session);
 
@@ -46,10 +47,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`User found: ${username}, Role: ${user.role}`);
         
         // Simple password for development
-        // Admin: admin123, Department Admin: admin123, Teacher: teacher123, Student: student123
+        // Admin: admin123, Department Admin: hod123, Teacher: teacher123, Student: student123
         const passwordForRole = {
           admin: "admin123",
-          department_admin: "admin123",
+          department_admin: "hod123",
           teacher: "teacher123",
           student: "student123"
         };
@@ -290,7 +291,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate the input data
       const validatedData = insertBookingSchema.parse({
         ...req.body,
-        userId: (req.user as any).id
+        userId: (req.user as any).id,
+        status: 'pending' as const // Ensure status is set to pending with correct type
       });
       
       // Ensure startTime and endTime are Date objects
@@ -310,7 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingData = {
         ...validatedData,
         startTime,
-        endTime
+        endTime,
+        status: 'pending' as const // Ensure status is set to pending with correct type
       };
       
       console.log("Parsed booking data:", bookingData);
@@ -331,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isAvailable) {
         return res.status(409).json({ message: "Room is not available for the selected time slot" });
       }
-      
+     
       const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
     } catch (error) {
@@ -346,45 +349,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/bookings", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
+      let bookings: any[] = [];
       
-      // Different roles see different bookings
-      let bookings;
+      // Get all bookings first
+      const allBookings = await storage.getBookings();
       
-      // Global admin sees all bookings
+      // Add room and user details to all bookings
+      const bookingsWithDetails = await Promise.all(
+        allBookings.map(async (booking) => {
+          const room = await storage.getRoom(booking.roomId);
+          const bookingUser = await storage.getUser(booking.userId);
+          return { ...booking, room, user: bookingUser };
+        })
+      );
+      
+      // Filter based on user role
       if (user.role === 'admin') {
-        bookings = await storage.getBookings();
-      } 
-      // Department admin sees all bookings for their department's meeting rooms
-      else if (user.role === 'department_admin') {
-        // Get all bookings first
-        const allBookings = await storage.getBookings();
-        
-        // Get the room details for each booking
-        const bookingsWithRooms = await Promise.all(
-          allBookings.map(async (booking) => {
-            const room = await storage.getRoom(booking.roomId);
-            return { ...booking, room };
-          })
+        // Global admin sees classroom and auditorium bookings
+        bookings = bookingsWithDetails.filter(booking => 
+          booking.room && 
+          (booking.room.roomType === 'classroom' || booking.room.roomType === 'auditorium')
         );
-        
-        // Filter to show only meeting halls in their department
-        bookings = bookingsWithRooms.filter(booking => 
+      } else if (user.role === 'department_admin') {
+        // Department admin sees meeting hall bookings for their department
+        bookings = bookingsWithDetails.filter(booking => 
           booking.room && 
           booking.room.roomType === 'meeting_hall' && 
           (booking.room.department === user.department || user.department === 'all')
         );
+      } else if (user.role === 'teacher') {
+        // Teachers see their own bookings
+        bookings = bookingsWithDetails.filter(booking => booking.userId === user.id);
       }
-      // Teachers see their own bookings
-      else if (user.role === 'teacher') {
-        bookings = await storage.getBookingsByUser(user.id);
-      }
-      // Students don't see any bookings - they only view timetable
-      else {
-        bookings = [];
-      }
+      
+      // Sort bookings by date (most recent first)
+      bookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
       res.json(bookings);
     } catch (error) {
+      console.error("Error fetching bookings:", error);
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
@@ -392,29 +395,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/bookings/pending", hasRole(["admin", "department_admin"]), async (req, res) => {
     try {
       const user = req.user as any;
-      let pendingBookings = await storage.getBookingsByStatus("pending");
       
-      // For department admin, filter bookings for meeting halls in their department
+      // Get all pending bookings
+      const pendingBookings = await storage.getBookingsByStatus("pending");
+      
+      // Add room and user details to all bookings
+      const bookingsWithDetails = await Promise.all(
+        pendingBookings.map(async (booking) => {
+          const room = await storage.getRoom(booking.roomId);
+          const bookingUser = await storage.getUser(booking.userId);
+          return { ...booking, room, user: bookingUser };
+        })
+      );
+      
+      // Filter based on admin role
+      let filteredBookings: (Booking & { room?: Room; user?: User })[] = [];
       if (user.role === 'department_admin') {
-        // Get all booking room details
-        const bookingsWithRooms = await Promise.all(
-          pendingBookings.map(async (booking) => {
-            const room = await storage.getRoom(booking.roomId);
-            return { ...booking, room };
-          })
+        // Department admin only sees meeting hall bookings for their department
+        filteredBookings = bookingsWithDetails.filter(booking => 
+          booking.room && 
+          booking.room.roomType === 'meeting_hall' && 
+          (booking.room.department === user.department || user.department === 'all')
         );
-        
-        // Filter to only show meeting halls in their department
-        pendingBookings = bookingsWithRooms
-          .filter(booking => 
-            booking.room && 
-            booking.room.roomType === 'meeting_hall' && 
-            (booking.room.department === user.department || user.department === 'all')
-          );
+      } else if (user.role === 'admin') {
+        // Global admin sees classroom and auditorium bookings
+        filteredBookings = bookingsWithDetails.filter(booking => 
+          booking.room && 
+          (booking.room.roomType === 'classroom' || booking.room.roomType === 'auditorium')
+        );
       }
       
-      res.json(pendingBookings);
+      // Sort bookings by date (most recent first)
+      filteredBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(filteredBookings);
     } catch (error) {
+      console.error("Error fetching pending bookings:", error);
       res.status(500).json({ message: "Failed to fetch pending bookings" });
     }
   });

@@ -1,9 +1,9 @@
 import React from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '../context/AuthContext';
+import { Card, CardContent, CardHeader } from '../components/ui/card';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
 
-const PersonalDetails = () => {
+const Profile = () => {
   const { user } = useAuth();
 
   if (!user) {
@@ -152,4 +152,4 @@ const PersonalDetails = () => {
   );
 };
 
-export default PersonalDetails;
+export default Profile; 

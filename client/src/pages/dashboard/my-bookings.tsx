@@ -5,56 +5,58 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { AlertCircle, Calendar, Clock, MapPin } from "lucide-react";
+import { AlertCircle, Calendar, MapPin } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function MyBookings() {
   const [activeTab, setActiveTab] = useState("all");
-  
-  const { data: bookings, isLoading } = useQuery<Booking[]>({
+
+  const { data: bookings, isLoading: isBookingsLoading } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
+    queryFn: () => apiRequest('GET', '/api/bookings').then((res: Response) => res.json())
   });
-  
-  const { data: rooms } = useQuery<Room[]>({
+
+  const { data: rooms, isLoading: isRoomsLoading } = useQuery<Room[]>({
     queryKey: ['/api/rooms'],
   });
-  
+
   // Helper to get room details
   const getRoomDetails = (roomId: number) => {
     return rooms?.find(room => room.id === roomId);
   };
-  
+
   // Filter bookings based on active tab
-  const filteredBookings = bookings?.filter(booking => {
-    if (!booking) return false;
-    if (activeTab === "all") return true;
-    return booking.status === activeTab;
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  
-  // Sort bookings by date (most recent first)
-  const sortedBookings = filteredBookings?.sort((a, b) => {
-    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-  });
-  
+  const filteredBookings = bookings?.filter(booking => 
+    activeTab === "all" ? true : booking.status === activeTab
+  ) || [];
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "MMMM d, yyyy");
   };
-  
+
   // Format time
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, "h:mm a");
   };
-  
+
+  // Optional: Custom status styles (if needed)
+  const statusColors: Record<string, string> = {
+    approved: "bg-green-100 text-green-800",
+    pending: "bg-yellow-100 text-yellow-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
   return (
     <div className="flex flex-col p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">My Bookings</h1>
         <p className="text-muted-foreground">Manage your room booking requests</p>
       </div>
-      
+
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList>
           <TabsTrigger value="all">All Bookings</TabsTrigger>
@@ -63,12 +65,12 @@ export default function MyBookings() {
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
       </Tabs>
-      
-      {isLoading ? (
+
+      {isBookingsLoading || isRoomsLoading ? (
         <div className="flex justify-center items-center p-12">
           <p>Loading bookings...</p>
         </div>
-      ) : !sortedBookings || sortedBookings.length === 0 ? (
+      ) : !filteredBookings || filteredBookings.length === 0 ? (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No bookings found</AlertTitle>
@@ -79,7 +81,7 @@ export default function MyBookings() {
         </Alert>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedBookings.map((booking) => {
+          {filteredBookings.map((booking) => {
             const room = getRoomDetails(booking.roomId);
             return (
               <Card key={booking.id}>
@@ -90,7 +92,7 @@ export default function MyBookings() {
                       Booking #{booking.id}
                     </p>
                   </div>
-                  <Badge variant={booking.status as any}>
+                  <Badge variant={booking.status}>
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </Badge>
                 </CardHeader>
@@ -105,7 +107,7 @@ export default function MyBookings() {
                         </p>
                       </div>
                     </div>
-                    
+
                     {room && (
                       <div className="flex items-start">
                         <MapPin className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
@@ -117,14 +119,14 @@ export default function MyBookings() {
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="pt-2 border-t">
                       <p className="text-sm font-medium mb-1">Purpose:</p>
                       <p className="text-sm text-muted-foreground">
                         {booking.purpose}
                       </p>
                     </div>
-                    
+
                     {booking.status === "pending" && (
                       <div className="bg-yellow-50 p-3 rounded-md">
                         <p className="text-xs text-yellow-800">
@@ -132,7 +134,7 @@ export default function MyBookings() {
                         </p>
                       </div>
                     )}
-                    
+
                     {booking.status === "rejected" && (
                       <div className="bg-red-50 p-3 rounded-md">
                         <p className="text-xs text-red-800">

@@ -22,14 +22,20 @@ export default function BookingModal({ room, onClose }: BookingModalProps) {
   const [endTime, setEndTime] = useState('');
   const [purpose, setPurpose] = useState('');
   
+  // Update booking mutation to include logic for approvals
   const bookingMutation = useMutation({
-    mutationFn: (bookingData: any) => apiRequest('POST', '/api/bookings', bookingData),
-    onSuccess: () => {
+    mutationFn: async (bookingData: any) => {
+      const response = await apiRequest('POST', '/api/bookings', bookingData);
+      if (!response.ok) throw new Error('Failed to submit booking');
+      return response.json();
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings/pending'] });
       queryClient.invalidateQueries({ queryKey: ['/api/rooms/available'] });
       toast({
         title: "Booking Submitted",
-        description: "Your booking has been submitted for approval",
+        description: `Your booking for ${room.name} has been submitted and is awaiting approval.`,
       });
       onClose();
     },
@@ -42,36 +48,59 @@ export default function BookingModal({ room, onClose }: BookingModalProps) {
     },
   });
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!date || !startTime || !endTime || !purpose) {
+    // Convert selected date and times to Date objects
+    const selectedDate = new Date(date);
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    const startDateTime = new Date(selectedDate);
+    startDateTime.setHours(startHour, startMinute, 0, 0);
+    
+    const endDateTime = new Date(selectedDate);
+    endDateTime.setHours(endHour, endMinute, 0, 0);
+
+    // Check if booking is for a future date/time
+    const now = new Date();
+    if (startDateTime <= now) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: "Invalid Booking Time",
+        description: "Please select a future date and time for your booking.",
         variant: "destructive",
       });
       return;
     }
-    
-    const startDateTime = new Date(`${date}T${startTime}`);
-    const endDateTime = new Date(`${date}T${endTime}`);
-    
+
+    // Check if end time is after start time
     if (endDateTime <= startDateTime) {
       toast({
-        title: "Time Error",
-        description: "End time must be after start time",
+        title: "Invalid Time Range",
+        description: "End time must be after start time.",
         variant: "destructive",
       });
       return;
     }
-    
-    bookingMutation.mutate({
+
+    // Check if the selected time is within working hours (9 AM to 5 PM)
+    if (startHour < 9 || endHour > 17) {
+      toast({
+        title: "Invalid Time",
+        description: "Bookings are only allowed between 9 AM and 5 PM.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const bookingData = {
       roomId: room.id,
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
-      purpose,
-    });
+      purpose: purpose.trim()
+    };
+
+    bookingMutation.mutate(bookingData);
   };
   
   return (
